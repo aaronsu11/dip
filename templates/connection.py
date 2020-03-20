@@ -1,7 +1,7 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative, APIException
 import time
 import socket
-import exceptions
+# import exceptions
 import math
 import argparse
 
@@ -14,7 +14,7 @@ def connectVehicle():
     connection_string = args.connect
 
     if not connection_string:
-        print ("No connection string provided. Start simulator (SITL)")
+        print("No connection string provided. Start simulator (SITL)")
         import dronekit_sitl
         sitl = dronekit_sitl.start_default()
         connection_string = sitl.connection_string()
