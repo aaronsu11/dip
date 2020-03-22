@@ -19,7 +19,7 @@ def readVehicleStates(vehicle):
     # Last heartbeat
     print("Last Heartbeat: %s" % vehicle.last_heartbeat)
     # Good to arm?
-    print("Vehicle armable: %" % vehicle.is_armable)
+    print("Vehicle armable: %s" % vehicle.is_armable)
     # Ground speed
     print("Ground Speed: %s" % vehicle.groundspeed)  # settable
     # Flight mode

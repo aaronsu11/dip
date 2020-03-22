@@ -15,7 +15,7 @@ def connectVehicle():
     connection_string = args.connect
 
     if not connection_string:
-        print "No connection string provided. Start simulator (SITL)"
+        print("No connection string provided. Start simulator (SITL)")
         import dronekit_sitl
         try:
             sitl = dronekit_sitl.start_default()
