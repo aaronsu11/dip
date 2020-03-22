@@ -1,9 +1,10 @@
 from dronekit import connect, VehicleMode, LocationGlobalRelative, APIException
 import time
 import socket
-# import exceptions
+import exceptions
 import math
 import argparse
+import sys
 
 
 def connectVehicle():
@@ -16,8 +17,15 @@ def connectVehicle():
     if not connection_string:
         print "No connection string provided. Start simulator (SITL)"
         import dronekit_sitl
-        sitl = dronekit_sitl.start_default()
-        connection_string = sitl.connection_string()
+        try:
+            sitl = dronekit_sitl.start_default()
+            connection_string = sitl.connection_string()
+        except OSError as e:
+            print(e)
+            print("SITL is only supported for x86 system")
+            print(
+                "Please provide a physical address to connect to. e.g. --connect 127.0.0.1")
+            sys.exit()
 
     # Connect to the Vehicle.
     print("Connecting to vehicle on: %s" % (connection_string,))
