@@ -3,7 +3,7 @@ from connection import connectVehicle
 import time
 
 
-def setVehicleMode(vehicle, mode):
+def setVehicleMode(vehicle, mode="GUIDED"):
     """Set vehicle mode
 
     Parameters:
@@ -16,9 +16,9 @@ def setVehicleMode(vehicle, mode):
     """
 
     vehicle.mode = VehicleMode(mode)
-    print("Waiting for vehicle to enter %s mode" % mode, end="")
+    print("Waiting for vehicle to enter %s mode" % mode)
     while vehicle.mode != mode:
-        print(".", end="")
+        print("."),
         time.sleep(1)
     print("Vehicle is now %s mode!" % mode)
 
@@ -35,16 +35,16 @@ def armVehicle(vehicle):
 
     """
 
-    print("Waiting for vehicle to become armable", end=""),
+    print("Waiting for vehicle to become armable")
     while vehicle.is_armable != True:
-        print(".", end="")
+        print("."),
         time.sleep(1)
     print("Vehicle is ready to arm!")
 
     vehicle.armed = True
-    print("Waiting for vehicle to arm", end="")
+    print("Waiting for vehicle to arm")
     while vehicle.armed != True:
-        print(".", end="")
+        print("."),
         time.sleep(1)
     print("Vehicle is now armed!")
 

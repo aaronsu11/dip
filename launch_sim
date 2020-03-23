@@ -1,0 +1,4 @@
+#!/bin/bash
+
+/usr/local/bin/dronekit copter --home=44.5013,-88.0622,0,180&
+

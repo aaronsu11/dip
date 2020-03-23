@@ -36,3 +36,4 @@ def connectVehicle():
 
 if __name__ == "__main__":
     vehicle = connectVehicle()
+    vehicle.close()
