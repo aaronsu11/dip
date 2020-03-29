@@ -55,3 +55,8 @@ CATKIN_IGNORE
 
 #pycache
 src/__pycache__
+
+#mavlink
+*.parm
+*.tlog
+*.tlog.raw
