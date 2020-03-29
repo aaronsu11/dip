@@ -13,5 +13,11 @@ mavproxy.py --master tcp:127.0.0.1:5760 --out udp:127.0.0.1:14550
 ##---------------------- Pixhawk + RPi ---------------------##
 ##----------------------------------------------------------##
 
+# Serial -> telecom port, ttyAMA0
 mavproxy.py --master=/dev/ttyAMA0 --baudrate 57600 --out 192.168.137.1:14550 --aircraft MyCopter
+
+# Serial -> USB port, ttyACM0
+mavproxy.py --master=/dev/ttyACM0 --out=127.0.0.1:14550 --out=127.0.0.1:5762
+
+# GCS -> WiFi access point, udp 14550 port
 mavproxy.py --master=udpout:10.0.1.128:14550
