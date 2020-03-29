@@ -1,0 +1,17 @@
+##----------------------------------------------------------##
+##----------------------- Simulation -----------------------##
+##----------------------------------------------------------##
+
+# Launch copter simulation using default settings
+cd $PATH_TO/ardupilot/build/sitl/bin
+./arducopter -S -I0 --home -35.363261,149.165230,584,353 --model "+" --speedup 1 --defaults /home/student/git/ardupilot/Tools/autotest/default_params/copter.parm
+
+# Create a MAVProxy terminal
+mavproxy.py --master tcp:127.0.0.1:5760 --out udp:127.0.0.1:14550
+
+##----------------------------------------------------------##
+##---------------------- Pixhawk + RPi ---------------------##
+##----------------------------------------------------------##
+
+mavproxy.py --master=/dev/ttyAMA0 --baudrate 57600 --out 192.168.137.1:14550 --aircraft MyCopter
+mavproxy.py --master=udpout:10.0.1.128:14550
