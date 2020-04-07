@@ -60,3 +60,9 @@ src/__pycache__
 *.parm
 *.tlog
 *.tlog.raw
+
+#output video files
+*.avi
+
+#IPython notebook cache
+.ipynb_checkpoints/
