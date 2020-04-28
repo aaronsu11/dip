@@ -63,6 +63,7 @@ src/__pycache__
 
 #output video files
 *.avi
+*.mp4
 
 #IPython notebook cache
 .ipynb_checkpoints/
