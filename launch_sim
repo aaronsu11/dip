@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## This script is used to start the simulation suite 
+## SITL + Ground Control + Dronekit script in one step
+
 ##Move this file to /usr/local/bin
 ##And call it using: launch_sim xxx.py
 ##Where xxx.py is the dronekit python script
