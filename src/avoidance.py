@@ -9,19 +9,21 @@ import imutils
 from connection import connectVehicle
 
 # construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video", type=str,
-                help="path to input video file")
-args = vars(ap.parse_args())
+# ap = argparse.ArgumentParser()
+# ap.add_argument("-v", "--video", type=str,
+#                 help="path to input video file")
+# args = vars(ap.parse_args())
 
-if not args.get("video", False):
-    print("[INFO] starting video stream...")
-    cap = cv.VideoCapture(0)
+# if not args.get("video", False):
+#     print("[INFO] starting video stream...")
+#     cap = cv.VideoCapture(0)
 
-# otherwise, grab a reference to the video file
-else:
-    print(args["video"])
-    cap = cv.VideoCapture(args["video"])
+# # otherwise, grab a reference to the video file
+# else:
+#     print(args["video"])
+#     cap = cv.VideoCapture(args["video"])
+
+cap = cv.VideoCapture(0)
 
 FRAME_SIZE = 800
 
@@ -31,16 +33,10 @@ FRAME_SIZE = 800
 ret, old_frame = cap.read()
 old_frame = imutils.resize(old_frame, width=FRAME_SIZE)
 old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
-<<<<<<< HEAD
-# connection_string = "127.0.0.1:14550"
-# vehicle = dk.connect(connection_string, wait_ready=True)
-vehicle = connectVehicle()
-=======
 
 vehicle = connectVehicle()
 # connection_string = "127.0.0.1:14550"
 # vehicle = dk.connect(connection_string, wait_ready=True)
->>>>>>> 53aa6b1b02135b474d5a0f3dc08d3b6fd7c4b646
 
 fourcc = cv.VideoWriter_fourcc(*'XVID')
 out = cv.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
