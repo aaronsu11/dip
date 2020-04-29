@@ -6,6 +6,8 @@ import time
 import argparse
 import imutils
 
+from connection import connectVehicle
+
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video", type=str,
