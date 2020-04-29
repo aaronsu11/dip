@@ -36,4 +36,7 @@ if __name__ == "__main__":
     armVehicle(vehicle)
     takeoff(vehicle, 5)
 
+    while true:
+        pass
+
     vehicle.close()
