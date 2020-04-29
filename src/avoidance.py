@@ -3,12 +3,31 @@ import numpy as np
 import dronekit as dk
 from pymavlink import mavutil
 import time
+import argparse
+import imutils
 
-cap = cv.VideoCapture(0)
+# construct the argument parser and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-v", "--video", type=str,
+                help="path to input video file")
+args = vars(ap.parse_args())
+
+if not args.get("video", False):
+    print("[INFO] starting video stream...")
+    cap = cv.VideoCapture(0)
+
+# otherwise, grab a reference to the video file
+else:
+    print(args["video"])
+    cap = cv.VideoCapture(args["video"])
+
+FRAME_SIZE = 800
+
 # cap.set(3, 480)
 # cap.set(4, 360)
 
 ret, old_frame = cap.read()
+old_frame = imutils.resize(old_frame, width=FRAME_SIZE)
 old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
 connection_string = "127.0.0.1:14550"
 vehicle = dk.connect(connection_string, wait_ready=True)
@@ -106,6 +125,7 @@ while True:
     ret, frame = cap.read()
     if frame is None:
         break
+    frame = imutils.resize(frame, width=FRAME_SIZE)
     frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
     flow = cv.calcOpticalFlowFarneback(
         old_gray, frame_gray, None, 0.5, 5, 30, 3, 5, 1.2, 0)
@@ -119,7 +139,8 @@ while True:
                                           cv.CHAIN_APPROX_SIMPLE)  # Find the contours based on the red regions
     for i in range(len(contours)):
         area = cv.contourArea(contours[i])
-        if area > 5000 and area < 13000:  # Condition to filter unwanted regions or objects
+        # Condition to filter unwanted regions or objects
+        if area > FRAME_SIZE**2 / 10 and area < FRAME_SIZE**2 / 5:
             contours[0] = contours[i]
             x, y, w, h = cv.boundingRect(contours[i])
             cv.rectangle(frame_gray, (x, y), (x + w, y + h), (255, 0, 0), 2)

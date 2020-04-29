@@ -1,115 +1,72 @@
-import cv2 as cv
 import numpy as np
-import dronekit
+import cv2
+import argparse
 
-cap = cv.VideoCapture(0)
-# cap1 = cv.VideoCapture(1)
-# cap2 = cv.VideoCapture(2)
+# construct the argument parser and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-v", "--video", type=str,
+                help="path to input video file")
+args = vars(ap.parse_args())
+
+if not args.get("video", False):
+    print("[INFO] starting video stream...")
+    cap = cv2.VideoCapture(0)
+
+# otherwise, grab a reference to the video file
+else:
+    print(args["video"])
+    cap = cv2.VideoCapture(args["video"])
+
+# params for ShiTomasi corner detection
 feature_params = dict(maxCorners=100,
-                      qualityLevel=0.5,
+                      qualityLevel=0.3,
                       minDistance=7,
                       blockSize=7)
 
+# Parameters for lucas kanade optical flow
 lk_params = dict(winSize=(15, 15),
                  maxLevel=2,
-                 criteria=(cv.TERM_CRITERIA_EPS | cv.TERM_CRITERIA_COUNT, 10, 0.03))
+                 criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03))
 
+# Create some random colors
+color = np.random.randint(0, 255, (100, 3))
+
+# Take first frame and find corners in it
 ret, old_frame = cap.read()
-# ret1, frame1 = cap1.read()
-# ret2, frame2 = cap2.read()
-# old_frame = np.concatenate((frame1, frame2), axis=1)
-old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
-p0 = cv.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
-fourcc = cv.VideoWriter_fourcc(*'DIVX')
-out = cv.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+old_gray = cv2.cvtColor(old_frame, cv2.COLOR_BGR2GRAY)
+p0 = cv2.goodFeaturesToTrack(old_gray, mask=None, **feature_params)
 
+# Create a mask image for drawing purposes
+mask = np.zeros_like(old_frame)
 
-def draw_flow(img, flow, step=16):
-    h, w = img.shape[:2]
-    y, x = np.mgrid[step / 2:h:step, step /
-                    2:w:step].reshape(2, -1).astype(int)
-
-    fx, fy = flow[y, x].T
-
-    lines = np.vstack([x, y, x + fx, y + fy]).T.reshape(-1, 2, 2)
-    lines = np.int32(lines + 0.5)
-    vis = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
-    for (x1, y1), (x2, y2) in lines:
-        if ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)) ** 0.5 > 7:
-            # cv.circle(vis, (x1, y1), 15, (0, 0, 255), -1)
-            cv.circle(vis, (x2, y2), 15, (0, 0, 255), -1)
-
-    # cv.polylines(vis, lines, 0, (0, 255, 0))
-
-    return vis
-
-
-while True:
+while(1):
     ret, frame = cap.read()
-    # ret1, frame1 = cap1.read()
-    # ret2, frame2 = cap2.read()
-    # frame = np.concatenate((frame1, frame2), axis=1)
-    if frame is None:
+    frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    # calculate optical flow
+    p1, st, err = cv2.calcOpticalFlowPyrLK(
+        old_gray, frame_gray, p0, None, **lk_params)
+
+    # Select good points
+    good_new = p1[st == 1]
+    good_old = p0[st == 1]
+
+    # draw the tracks
+    for i, (new, old) in enumerate(zip(good_new, good_old)):
+        a, b = new.ravel()
+        c, d = old.ravel()
+        mask = cv2.line(mask, (a, b), (c, d), color[i].tolist(), 2)
+        frame = cv2.circle(frame, (a, b), 5, color[i].tolist(), -1)
+    img = cv2.add(frame, mask)
+
+    cv2.imshow('frame', img)
+    k = cv2.waitKey(30) & 0xff
+    if k == 27:
         break
 
-    frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-
-    # p1, st, err = cv.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
-    # good_new = p1[st == 1]
-    # good_old = p0[st == 1]
-
-    flow = cv.calcOpticalFlowFarneback(
-        old_gray, frame_gray, None, 0.5, 5, 15, 3, 5, 1.2, 0)
-
-    # for i, (new, old) in enumerate(zip(good_,new, good_old)):
-    #     #     a, b = new.ravel()
-    #     #     c, d = old.ravel()
-    #     #     cv.circle(frame_gray, (0, 0), 10, [255, 0, 0], -1)
-    #     #     if (abs(a-c)*abs(c-d)) > 1000:
-    #     #         cv.rectangle(frame_gray, (a, b), (c, d), [0, 255, 0], 3)
-    #     #     cv.circle(frame_gray, (a, b) 5, [255, 0, 0], -1)
-    # change the quality Level to remove noise
-    # cv.imshow("OpticalFlow", frame_gray)
-    new_frame = draw_flow(frame_gray, flow)
-    frame_HSV = cv.cvtColor(new_frame, cv.COLOR_BGR2HSV)
-    frame_threshold = cv.inRange(frame_HSV, (0, 58, 140), (57, 255, 255))
-    ret, thresh = cv.threshold(frame_threshold, 50, 255, cv.THRESH_BINARY)
-    _, contours, hierarchy = cv.findContours(
-        thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    for i in range(len(contours)):
-        area = cv.contourArea(contours[i])
-        if area > 11000:
-            # contours[0] = contours[i]
-            x, y, w, h = cv.boundingRect(contours[i])
-            cv.rectangle(new_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
-            center_x = x + w / 2
-            center_y = y + h / 2
-            # Replace print statements below with mavlink commands
-            if (center_x < 160):
-                if (x + w <= 160):
-                    print("go straight")
-                else:
-                    print("turn left")
-            elif (center_x > 160) and (center_x <= 320):
-                print("turn left")
-            elif (center_x > 320) and (center_x < 480):
-                print("turn right")
-            elif (center_x >= 480):
-                if (x < 480):
-                    print("turn right")
-                else:
-                    print("go straight")
-    # save = cv.cvtColor(new_frame, cv.COLOR_GRAY2BGR)
-    save = cv.resize(new_frame, (640, 480), fx=0, fy=0,
-                     interpolation=cv.INTER_CUBIC)
-    out.write(save)
-    cv.imshow("OpticalFlow", new_frame)
-    cv.imshow("Original", frame_gray)
+    # Now update the previous frame and previous points
     old_gray = frame_gray.copy()
-    # p0 = good_new.reshape(-1, 1, 2)
+    p0 = good_new.reshape(-1, 1, 2)
 
-    key = cv.waitKey(30)
-    if key == ord('q'):
-        out.release()
-        break
+cv2.destroyAllWindows()
+cap.release()
