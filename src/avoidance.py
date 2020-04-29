@@ -6,6 +6,8 @@ import time
 import argparse
 import imutils
 
+from connection import connectVehicle
+
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
 ap.add_argument("-v", "--video", type=str,
@@ -29,8 +31,10 @@ FRAME_SIZE = 800
 ret, old_frame = cap.read()
 old_frame = imutils.resize(old_frame, width=FRAME_SIZE)
 old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
-connection_string = "127.0.0.1:14550"
-vehicle = dk.connect(connection_string, wait_ready=True)
+
+vehicle = connectVehicle()
+# connection_string = "127.0.0.1:14550"
+# vehicle = dk.connect(connection_string, wait_ready=True)
 
 fourcc = cv.VideoWriter_fourcc(*'XVID')
 out = cv.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
@@ -140,7 +144,7 @@ while True:
     for i in range(len(contours)):
         area = cv.contourArea(contours[i])
         # Condition to filter unwanted regions or objects
-        if area > FRAME_SIZE**2 / 10 and area < FRAME_SIZE**2 / 5:
+        if area > FRAME_SIZE**2 / 15 and area < FRAME_SIZE**2 / 5:
             contours[0] = contours[i]
             x, y, w, h = cv.boundingRect(contours[i])
             cv.rectangle(frame_gray, (x, y), (x + w, y + h), (255, 0, 0), 2)
