@@ -106,7 +106,7 @@ while True:
         thresh, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     for i in range(len(contours)):
         area = cv.contourArea(contours[i])
-        if area > FRAME_SIZE**2 / 10 and area < FRAME_SIZE**2 / 5:
+        if area > FRAME_SIZE**2 / 15 and area < FRAME_SIZE**2 / 5:
             # contours[0] = contours[i]
             x, y, w, h = cv.boundingRect(contours[i])
             cv.rectangle(new_frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
