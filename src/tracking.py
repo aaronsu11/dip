@@ -1,99 +1,140 @@
+# USAGE
+# python opencv_object_tracking.py
+# python opencv_object_tracking.py --video dashcam_boston.mp4 --tracker csrt
+
+# import the necessary packages
+from imutils.video import VideoStream
+from imutils.video import FPS
+import argparse
+import imutils
+import time
 import cv2
-import sys
 
-(major_ver, minor_ver, subminor_ver) = (cv2.__version__).split('.')
+# construct the argument parser and parse the arguments
+ap = argparse.ArgumentParser()
+ap.add_argument("-v", "--video", type=str,
+	help="path to input video file")
+ap.add_argument("-t", "--tracker", type=str, default="kcf",
+	help="OpenCV object tracker type")
+args = vars(ap.parse_args())
 
-if __name__ == '__main__':
+# extract the OpenCV version info
+(major, minor) = cv2.__version__.split(".")[:2]
 
-    # Set up tracker.
-    # Instead of MIL, you can also use
+# if we are using OpenCV 3.2 OR BEFORE, we can use a special factory
+# function to create our object tracker
+if int(major) == 3 and int(minor) < 3:
+	tracker = cv2.Tracker_create(args["tracker"].upper())
 
-    tracker_types = ['BOOSTING', 'MIL', 'KCF', 'TLD',
-                     'MEDIANFLOW', 'GOTURN', 'MOSSE', 'CSRT']
-    tracker_type = tracker_types[2]
+# otherwise, for OpenCV 3.3 OR NEWER, we need to explicity call the
+# approrpiate object tracker constructor:
+else:
+	# initialize a dictionary that maps strings to their corresponding
+	# OpenCV object tracker implementations
+	OPENCV_OBJECT_TRACKERS = {
+		"csrt": cv2.TrackerCSRT_create,
+		"kcf": cv2.TrackerKCF_create,
+		"boosting": cv2.TrackerBoosting_create,
+		"mil": cv2.TrackerMIL_create,
+		"tld": cv2.TrackerTLD_create,
+		"medianflow": cv2.TrackerMedianFlow_create,
+		"mosse": cv2.TrackerMOSSE_create
+	}
 
-    if int(minor_ver) < 3:
-        tracker = cv2.Tracker_create(tracker_type)
-    else:
-        if tracker_type == 'BOOSTING':
-            tracker = cv2.TrackerBoosting_create()
-        if tracker_type == 'MIL':
-            tracker = cv2.TrackerMIL_create()
-        if tracker_type == 'KCF':
-            tracker = cv2.TrackerKCF_create()
-        if tracker_type == 'TLD':
-            tracker = cv2.TrackerTLD_create()
-        if tracker_type == 'MEDIANFLOW':
-            tracker = cv2.TrackerMedianFlow_create()
-        if tracker_type == 'GOTURN':
-            tracker = cv2.TrackerGOTURN_create()
-        if tracker_type == 'MOSSE':
-            tracker = cv2.TrackerMOSSE_create()
-        if tracker_type == "CSRT":
-            tracker = cv2.TrackerCSRT_create()
+	# grab the appropriate object tracker using our dictionary of
+	# OpenCV object tracker objects
+	tracker = OPENCV_OBJECT_TRACKERS[args["tracker"]]()
 
-    # Read video
-    video = cv2.VideoCapture("FPV.mp4")
-    # video = cv2.VideoCapture(0)
+# initialize the bounding box coordinates of the object we are going
+# to track
+initBB = None
 
-    # Exit if video not opened.
-    if not video.isOpened():
-        print("Could not open video")
-        sys.exit()
+# if a video path was not supplied, grab the reference to the web cam
+if not args.get("video", False):
+	print("[INFO] starting video stream...")
+	vs = VideoStream(src=0).start()
+	time.sleep(1.0)
 
-    # Read first frame.
-    ok, frame = video.read()
-    if not ok:
-        print('Cannot read video file')
-        sys.exit()
+# otherwise, grab a reference to the video file
+else:
+	vs = cv2.VideoCapture(args["video"])
 
-    # Define an initial bounding box
-    bbox = (287, 23, 86, 320)
+# initialize the FPS throughput estimator
+fps = None
 
-    # Uncomment the line below to select a different bounding box
-    bbox = cv2.selectROI(frame, False)
+# loop over frames from the video stream
+while True:
+	# grab the current frame, then handle if we are using a
+	# VideoStream or VideoCapture object
+	frame = vs.read()
+	frame = frame[1] if args.get("video", False) else frame
 
-    # Initialize tracker with first frame and bounding box
-    ok = tracker.init(frame, bbox)
+	# check to see if we have reached the end of the stream
+	if frame is None:
+		break
 
-    while True:
-        # Read a new frame
-        ok, frame = video.read()
-        if not ok:
-            break
+	# resize the frame (so we can process it faster) and grab the
+	# frame dimensions
+	frame = imutils.resize(frame, width=500)
+	(H, W) = frame.shape[:2]
 
-        # Start timer
-        timer = cv2.getTickCount()
+	# check to see if we are currently tracking an object
+	if initBB is not None:
+		# grab the new bounding box coordinates of the object
+		(success, box) = tracker.update(frame)
 
-        # Update tracker
-        ok, bbox = tracker.update(frame)
+		# check to see if the tracking was a success
+		if success:
+			(x, y, w, h) = [int(v) for v in box]
+			cv2.rectangle(frame, (x, y), (x + w, y + h),
+				(0, 255, 0), 2)
 
-        # Calculate Frames per second (FPS)
-        fps = cv2.getTickFrequency() / (cv2.getTickCount() - timer)
+		# update the FPS counter
+		fps.update()
+		fps.stop()
 
-        # Draw bounding box
-        if ok:
-            # Tracking success
-            p1 = (int(bbox[0]), int(bbox[1]))
-            p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-            cv2.rectangle(frame, p1, p2, (255, 0, 0), 2, 1)
-        else:
-            # Tracking failure
-            cv2.putText(frame, "Tracking failure detected", (100, 80),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 255), 2)
+		# initialize the set of information we'll be displaying on
+		# the frame
+		info = [
+			("Tracker", args["tracker"]),
+			("Success", "Yes" if success else "No"),
+			("FPS", "{:.2f}".format(fps.fps())),
+		]
 
-        # Display tracker type on frame
-        cv2.putText(frame, tracker_type + " Tracker", (100, 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
+		# loop over the info tuples and draw them on our frame
+		for (i, (k, v)) in enumerate(info):
+			text = "{}: {}".format(k, v)
+			cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
+				cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
-        # Display FPS on frame
-        cv2.putText(frame, "FPS : " + str(int(fps)), (100, 50),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.75, (50, 170, 50), 2)
+	# show the output frame
+	cv2.imshow("Frame", frame)
+	key = cv2.waitKey(1) & 0xFF
 
-        # Display result
-        cv2.imshow("Tracking", frame)
+	# if the 's' key is selected, we are going to "select" a bounding
+	# box to track
+	if key == ord("s"):
+		# select the bounding box of the object we want to track (make
+		# sure you press ENTER or SPACE after selecting the ROI)
+		initBB = cv2.selectROI("Frame", frame, fromCenter=False,
+			showCrosshair=True)
 
-        # Exit if ESC pressed
-        k = cv2.waitKey(1) & 0xff
-        if k == 27:
-            break
+		# start OpenCV object tracker using the supplied bounding box
+		# coordinates, then start the FPS throughput estimator as well
+		tracker.init(frame, initBB)
+		fps = FPS().start()
+
+	# if the `q` key was pressed, break from the loop
+	elif key == ord("q"):
+		break
+
+# if we are using a webcam, release the pointer
+if not args.get("video", False):
+	vs.stop()
+
+# otherwise, release the file pointer
+else:
+	vs.release()
+
+# close all windows
+cv2.destroyAllWindows()
