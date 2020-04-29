@@ -4,14 +4,17 @@ import dronekit as dk
 from pymavlink import mavutil
 import time
 
+from connection import connectVehicle
+
 cap = cv.VideoCapture(0)
 # cap.set(3, 480)
 # cap.set(4, 360)
 
 ret, old_frame = cap.read()
 old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
-connection_string = "127.0.0.1:14550"
-vehicle = dk.connect(connection_string, wait_ready=True)
+# connection_string = "127.0.0.1:14550"
+# vehicle = dk.connect(connection_string, wait_ready=True)
+vehicle = connectVehicle()
 
 fourcc = cv.VideoWriter_fourcc(*'XVID')
 out = cv.VideoWriter('output.avi', fourcc, 20.0, (640, 480))

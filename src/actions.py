@@ -36,7 +36,8 @@ if __name__ == "__main__":
     armVehicle(vehicle)
     takeoff(vehicle, 5)
 
-    while true:
-        pass
+    key = ""
+    while (key != "q"):
+        key = input()
 
     vehicle.close()
