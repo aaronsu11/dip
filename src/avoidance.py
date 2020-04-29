@@ -9,19 +9,21 @@ import imutils
 from connection import connectVehicle
 
 # construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video", type=str,
-                help="path to input video file")
-args = vars(ap.parse_args())
+# ap = argparse.ArgumentParser()
+# ap.add_argument("-v", "--video", type=str,
+#                 help="path to input video file")
+# args = vars(ap.parse_args())
 
-if not args.get("video", False):
-    print("[INFO] starting video stream...")
-    cap = cv.VideoCapture(0)
+# if not args.get("video", False):
+#     print("[INFO] starting video stream...")
+#     cap = cv.VideoCapture(0)
 
-# otherwise, grab a reference to the video file
-else:
-    print(args["video"])
-    cap = cv.VideoCapture(args["video"])
+# # otherwise, grab a reference to the video file
+# else:
+#     print(args["video"])
+#     cap = cv.VideoCapture(args["video"])
+
+cap = cv.VideoCapture(0)
 
 FRAME_SIZE = 800
 
