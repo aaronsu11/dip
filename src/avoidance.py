@@ -26,6 +26,8 @@ from connection import connectVehicle
 cap = cv.VideoCapture(0)
 
 FRAME_SIZE = 800
+WPX = 28.623038
+WPY = 77.258873 - 0.0015
 
 # cap.set(3, 480)
 # cap.set(4, 360)
@@ -115,12 +117,14 @@ def draw_flow(img, flow, step=16):
             cv.circle(vis, (x2, y2), 15, (0, 0, 255), -1)
     return vis
 
+# cmds = vehicle.commands  # Download the waypoint from mission planner
+# cmds.download()
+# cmds.wait_ready()
 
-cmds = vehicle.commands  # Download the waypoint from mission planner
-cmds.download()
-cmds.wait_ready()
+# waypoint = dk.LocationGlobalRelative(cmds[0].x, cmds[0].y, 10)  # Destination
 
-waypoint = dk.LocationGlobalRelative(cmds[0].x, cmds[0].y, 10)  # Destination
+waypoint = dk.LocationGlobalRelative(WPX,WPY, 10)  # Destination
+
 arm_and_takeoff(3)
 vehicle.airspeed = 1
 vehicle.simple_goto(waypoint)
@@ -141,7 +145,7 @@ while True:
     frame_threshold = cv.inRange(frame_HSV, (0, 58, 140),
                                  (57, 255, 255))  # Convert the frame to HSV value to detect only red
     ret, thresh = cv.threshold(frame_threshold, 50, 255, cv.THRESH_BINARY)
-    contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE,
+    _, contours, hierarchy = cv.findContours(thresh, cv.RETR_TREE,
                                           cv.CHAIN_APPROX_SIMPLE)  # Find the contours based on the red regions
     for i in range(len(contours)):
         area = cv.contourArea(contours[i])
@@ -210,7 +214,7 @@ while True:
         break
     lat = vehicle.location.global_relative_frame.lat  # get the current latitude
     lon = vehicle.location.global_relative_frame.lon  # get the current longitude
-    if round(lat, 5) == round(cmds[0].x, 5) and round(lon, 5) == round(cmds[0].y,
+    if round(lat, 5) == round(WPX, 5) and round(lon, 5) == round(WPY,
                                                                        5):  # check whether the vehicle is arrived or not
         print("Arrived")
         out.release()
@@ -219,3 +223,5 @@ while True:
 print("Landing")
 vehicle.mode = dk.VehicleMode("LAND")
 vehicle.flush()
+
+vehicle.close()

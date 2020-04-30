@@ -60,7 +60,8 @@ def draw_flow(img, flow, step=16):
     lines = np.int32(lines + 0.5)
     vis = cv.cvtColor(img, cv.COLOR_GRAY2BGR)
     for (x1, y1), (x2, y2) in lines:
-        if ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)) ** 0.5 > 7:
+        # if ((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)) ** 0.5 > 7:
+        if ((x2 - x1) * (x2 - x1) ** 0.5 <= 5) and ((x2 - x1) * (x2 - x1) ** 0.5 > 2) and ((y2 - y1) * (y2 - y1) ** 0.5 <= 5) and ((y2 - y1) * (y2 - y1) ** 0.5 > 2):
             # cv.circle(vis, (x1, y1), 15, (0, 0, 255), -1)
             cv.circle(vis, (x2, y2), 15, (0, 0, 255), -1)
 
