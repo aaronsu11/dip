@@ -1,6 +1,7 @@
 from dronekit import VehicleMode
-from connection import connectVehicle
 import time
+
+from connection import connectVehicle
 
 
 def setVehicleMode(vehicle, mode="GUIDED"):
@@ -23,38 +24,9 @@ def setVehicleMode(vehicle, mode="GUIDED"):
     print("Vehicle is now %s mode!" % mode)
 
 
-def armVehicle(vehicle):
-    """Arm the vehicle
-    !!!CAUTION (for drone)!!! Propeller will start spinning!
-
-    Parameters:
-        vehicle: the vehicle object, connected to mavproxy
-
-    Return:
-        None
-
-    """
-
-    print("Waiting for vehicle to become armable")
-    while vehicle.is_armable != True:
-        print("."),
-        time.sleep(1)
-    print("Vehicle is ready to arm!")
-
-    vehicle.armed = True
-    print("Waiting for vehicle to arm")
-    while vehicle.armed != True:
-        print("."),
-        time.sleep(1)
-    print("Vehicle is now armed!")
-
-
 if __name__ == "__main__":
     vehicle = connectVehicle()
     setVehicleMode(vehicle, "GUIDED")
-
-    print("CAUTION! Props may start spinning!")
-    armVehicle(vehicle)
     time.sleep(3)
 
     vehicle.close()
