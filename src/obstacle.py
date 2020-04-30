@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     while True:
 
-        start = time.perf_counter()
+        # start = time.perf_counter()
 
         ret, frame = cap.read()
 
@@ -156,11 +156,11 @@ if __name__ == "__main__":
         cv.imshow("Original", frame_gray)
         old_gray = frame_gray.copy()
 
-        finish = time.perf_counter()
+        # finish = time.perf_counter()
 
         key = cv.waitKey(1)
         if key == ord('q'):
             out.release()
             break
 
-        print("%ssec" % round(finish-start, 4))
+        # print("%ssec" % round(finish-start, 4))

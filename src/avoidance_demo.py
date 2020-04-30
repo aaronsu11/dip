@@ -12,9 +12,9 @@ from connection import connectVehicle
 from actions import arm_and_takeoff, send_ned_velocity, goto_position_target_local_ned
 from obstacle import draw_flow, detect_obstacle
 
-FRAME_SIZE = 800
+FRAME_SIZE = 500
 WPX = 28.623038
-WPY = 77.258873 - 0.003
+WPY = 77.260373 - 0.003
 
 class Command(enum.Enum):
     Straight = 0
@@ -24,16 +24,17 @@ class Command(enum.Enum):
 def sendCommand(vehicle, command):
         if command is Command.Left:
             print("Turning Left")
-            goto_position_target_local_ned(vehicle, 0, 2, 0)  # move left for 0.5 meters
+            goto_position_target_local_ned(vehicle, 0, -2, 0)  # move left for 0.5 meters
         elif command is Command.Right:
             print("Turning Right")
-            goto_position_target_local_ned(vehicle, 0, -2, 0)  # move left for 0.5 meters
+            goto_position_target_local_ned(vehicle, 0, 2, 0)  # move left for 0.5 meters
         else:
             vehicle.simple_goto(waypoint)  # continue the journey
 
 if __name__ == "__main__":
 
-    cap = cv.VideoCapture(0)
+    cap = cv.VideoCapture("/home/student/Videos/SIM001.mp4")
+    # cap = cv.VideoCapture(0)
 
     ret, old_frame = cap.read()
     old_frame = imutils.resize(old_frame, width=FRAME_SIZE)
@@ -46,8 +47,8 @@ if __name__ == "__main__":
 
     waypoint = dk.LocationGlobalRelative(WPX,WPY, 10)  # Destination
 
-    arm_and_takeoff(vehicle, 5)
-    vehicle.airspeed = 3
+    arm_and_takeoff(vehicle, 10)
+    vehicle.airspeed = 10
     vehicle.simple_goto(waypoint)
 
     while True:
@@ -119,7 +120,7 @@ if __name__ == "__main__":
         cv.imshow("Original", frame_gray)
         old_gray = frame_gray.copy()
 
-        key = cv.waitKey(1)
+        key = cv.waitKey(200)
         if key == ord('q'):
             out.release()
             break
