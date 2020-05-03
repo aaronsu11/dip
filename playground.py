@@ -1,12 +1,23 @@
-import argparse
+from scipy.io import loadmat
+alt = loadmat('alt_landing.mat')['alt'][:, 0]
+# lon = x['lon']
+# lat = x['lat']
+# # one-liner to read a single variable
+# lon = loadmat('test.mat')['lon']
+print()
 
-# construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-v", "--video", type=str,
-                help="path to input video file")
-args = vars(ap.parse_args())
-
-if not args.get("video", False):
-    print("HI")
-else:
-    print(args)
+# 'LineNo'
+# 'TimeUS'
+# 'Status'
+# 'GMS'
+# 'GWk'
+# 'NSats'
+# 'HDop'
+# 'Lat'
+# 'Lng'
+# 'Alt'
+# 'Spd'
+# 'GCrs'
+# 'VZ'
+# 'Yaw'
+# 'U'

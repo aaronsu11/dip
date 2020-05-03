@@ -2,12 +2,16 @@
 from transitions import Machine
 # Dronekit
 from connection import connectVehicle
-from set_states import setVehicleMode, armVehicle
-from actions import takeoff
+from set_states import setVehicleMode
+from actions import takeoff, armVehicle
 # Python Libraries
 import time
 import random
 import enum
+import threading
+
+WPX = 28.623038
+WPY = 77.260373 - 0.003
 
 
 class Status(enum.Enum):
@@ -21,6 +25,20 @@ class Tasks(enum.Enum):
     NAVIGATE = 0
     SAMPLE = 1
     LAND = 2
+
+# Simulating asynchronous request
+
+
+def request(command):
+    time.sleep(0.2)
+    print(command)
+    return command
+
+
+def sendCommand(vehicle, command):
+    # Replace below with dronekit code
+    t = threading.Thread(target=request, args=[command])
+    t.start()
 
 
 class Mission(object):
@@ -56,11 +74,11 @@ class Mission(object):
         # {'trigger': 'mission_complete', 'source': 'mission_analysis', 'dest': 'idle'}
     ]
 
-    def __init__(self, name):
+    def __init__(self, vehicle):
 
         # No anonymous superheroes on my watch! Every narcoleptic superhero gets
         # a name. Any name at all. SleepyMan. SlumberGirl. You get the idea.
-        self.name = name
+        self.vehicle = vehicle
 
         self.mission_status = Status.EMPTY
         self.goal = []
@@ -88,7 +106,10 @@ class Mission(object):
             'proceed', 'preflight_check', 'task_control', conditions=['safe_to_fly'], before='take_off')
 
         self.machine.add_transition(
-            'proceed', 'task_control', 'navigating', conditions=['waypoint_set', 'is_to_navigate'], before='plan_path', after='navigate')
+            'proceed', 'task_control', 'path_planning', conditions=['is_to_navigate'], after='plan_path')
+
+        self.machine.add_transition(
+            'proceed', 'path_planning', 'navigating', conditions=['waypoint_set'], after='navigate')
 
         self.machine.add_transition(
             'proceed', 'navigating', 'task_control', conditions=['waypoint_reached'])
@@ -158,35 +179,37 @@ class Mission(object):
     # Callbacks
     def analyse_mission(self):
         if self.mission_status is Status.AVAILABLE:
-            print("Feasible, mission started")
+            sendCommand(self.vehicle, "Feasible, mission started")
             self.mission_status = Status.STARTED
         elif self.mission_status is Status.STARTED:
-            print("Mission complete")
+            sendCommand(self.vehicle, "Mission complete")
             self.mission_status = Status.EMPTY
 
     def check_sensors(self):
-        print("Good to take-off")
+        sendCommand(self.vehicle, "Good to take-off")
 
     def take_off(self):
-        print("Taking off")
+        sendCommand(self.vehicle, "Taking off")
 
     def plan_path(self):
-        print("Generating path")
-        print("Path generated")
+        sendCommand(self.vehicle, "Generating path")
+        sendCommand(self.vehicle, "Path generated")
+        time.sleep(0.1)
+        self.path.append(1)
 
     def navigate(self):
-        print("Navigating")
+        sendCommand(self.vehicle, "Navigating")
 
     def choose_action(self):
-        print("Choosing next action")
+        sendCommand(self.vehicle, "Choosing next action")
         self.current_task = self.tasks.pop(0)
 
     def find_landmark(self):
-        print("Looking for landmark")
-        print("Landmark found")
+        sendCommand(self.vehicle, "Looking for landmark")
+        sendCommand(self.vehicle, "Landmark found")
 
     def land(self):
-        print("Landing")
+        sendCommand(self.vehicle, "Landing")
 
     # Conditions
     @property
@@ -203,10 +226,14 @@ class Mission(object):
 
     @property
     def waypoint_set(self):
-        return True
+        if self.path:
+            return True
+        else:
+            return False
 
     @property
     def waypoint_reached(self):
+        print("Waypoint reached")
         return True
 
     @property
@@ -230,9 +257,10 @@ if __name__ == "__main__":
     dip = Mission("DIP")
     # coordinates = input("Enter the sampling coordinates: ").split()
     coordinates = [1, 2, 3]
-    dip.add_mission(coordinates)
     print("Current state: ", dip.state)
+    dip.add_mission(coordinates)
     dip.start()
+    print("Mission available")
     print("Current state: ", dip.state)
     while (dip.mission_status != Status.EMPTY):
         time.sleep(1)

@@ -9,6 +9,10 @@ import argparse
 import imutils
 import time
 import cv2
+from scipy.io import loadmat
+
+# Equilvalent focal length in pixel
+FOCAL_LENGHT = 400
 
 # construct the argument parser and parse the arguments
 ap = argparse.ArgumentParser()
@@ -59,8 +63,19 @@ if not args.get("video", False):
 else:
     vs = cv2.VideoCapture(args["video"])
 
+# Output video
+fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+out = cv2.VideoWriter('tracking.avi', fourcc, 20.0, (640, 480))
+
 # initialize the FPS throughput estimator
 fps = None
+
+# Load altitude data
+alt_stream = loadmat('alt_landing.mat')['alt'][:, 0].tolist()
+ground_alt = min(alt_stream)
+alt = alt_stream[0] - ground_alt + 1
+# Align alt data with video
+frame_count = 0
 
 # loop over frames from the video stream
 while True:
@@ -73,6 +88,11 @@ while True:
     if frame is None:
         break
 
+    frame_count += 0.5
+    if alt_stream and frame_count > 2:
+        frame_count = 0
+        alt = alt_stream.pop(0) - ground_alt + 1
+
     # resize the frame (so we can process it faster) and grab the
     # frame dimensions
     frame = imutils.resize(frame, width=800)
@@ -83,11 +103,23 @@ while True:
         # grab the new bounding box coordinates of the object
         (success, box) = tracker.update(frame)
 
+        cv2.circle(frame, (W//2, H//2), 5, (255, 0, 0), -1)
         # check to see if the tracking was a success
         if success:
+            # x, y is the upper left coordinate
             (x, y, w, h) = [int(v) for v in box]
-            cv2.rectangle(frame, (x, y), (x + w, y + h),
-                          (0, 255, 0), 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            center_x = int(x + w/2)
+            center_y = int(y + h/2)
+            cv2.circle(frame, (center_x, center_y), 5, (0, 0, 255), -1)
+
+            # dist in pixel
+            h_dist = center_x - W/2
+            v_dist = H/2 - center_y
+
+            # dist in meter using triangular similarity
+            x_dist = alt*h_dist/FOCAL_LENGHT
+            y_dist = alt*v_dist/FOCAL_LENGHT
 
         # update the FPS counter
         fps.update()
@@ -98,6 +130,8 @@ while True:
         info = [
             ("Tracker", args["tracker"]),
             ("Success", "Yes" if success else "No"),
+            ("Target(m)", "{:.2f}, {:.2f}".format(x_dist, y_dist)),
+            ("Alt(m)", "{:.2f}".format(alt)),
             ("FPS", "{:.2f}".format(fps.fps())),
         ]
 
@@ -106,6 +140,10 @@ while True:
             text = "{}: {}".format(k, v)
             cv2.putText(frame, text, (10, H - ((i * 20) + 20)),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
+    save = cv2.resize(frame, (640, 480), fx=0, fy=0,
+                      interpolation=cv2.INTER_CUBIC)
+    out.write(save)
 
     # show the output frame
     cv2.imshow("Frame", frame)

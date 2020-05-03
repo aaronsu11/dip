@@ -78,11 +78,11 @@ if __name__ == "__main__":
     old_gray = cv.cvtColor(old_frame, cv.COLOR_BGR2GRAY)
 
     fourcc = cv.VideoWriter_fourcc(*'DIVX')
-    out = cv.VideoWriter('output.avi', fourcc, 20.0, (640, 480))
+    out = cv.VideoWriter('optical_flow.avi', fourcc, 20.0, (640, 480))
 
     while True:
 
-        # start = time.perf_counter()
+        start = time.perf_counter()
 
         ret, frame = cap.read()
 
@@ -90,6 +90,7 @@ if __name__ == "__main__":
             break
 
         frame = imutils.resize(frame, width=FRAME_SIZE)
+        (H, W) = frame.shape[:2]
 
         frame_gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
@@ -138,16 +139,29 @@ if __name__ == "__main__":
         command = Command.Straight
         if obstacle_left and not obstacle_right:
             command = Command.Right
-            # print("turn right")
+            turn = "Right"
         elif obstacle_right and not obstacle_left:
             command = Command.Left
-            # print("turn left")
+            turn = "Left"
         else:
-            pass
-            # print("go straight")
+            turn = "Straight"
 
         t = threading.Thread(target=do_something, args=[command])
         t.start()
+
+        finish = time.perf_counter()
+        # initialize the set of information we'll be displaying on
+        # the frame
+        info = [
+            ("Turn", turn),
+            ("FPS", "{:.2f}".format(1/(finish-start))),
+        ]
+
+        # loop over the info tuples and draw them on our frame
+        for (i, (k, v)) in enumerate(info):
+            text = "{}: {}".format(k, v)
+            cv.putText(new_frame, text, (10, H - ((i * 20) + 20)),
+                       cv.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
         save = cv.resize(new_frame, (640, 480), fx=0, fy=0,
                          interpolation=cv.INTER_CUBIC)
@@ -155,8 +169,6 @@ if __name__ == "__main__":
         cv.imshow("OpticalFlow", new_frame)
         cv.imshow("Original", frame_gray)
         old_gray = frame_gray.copy()
-
-        # finish = time.perf_counter()
 
         key = cv.waitKey(1)
         if key == ord('q'):
